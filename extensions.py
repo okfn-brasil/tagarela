@@ -3,7 +3,7 @@
 
 from flask.ext.sqlalchemy import SQLAlchemy
 
-from phobos import SignerVerifier
+from viratoken import SignerVerifier
 
 
 db = SQLAlchemy()
