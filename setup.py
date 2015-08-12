@@ -22,7 +22,7 @@ setup(
     ],
     keywords=['comments', 'microservice'],
     classifiers=[
-        "Development Status :: 3 - Alpha"
+        "Development Status :: 3 - Alpha",
         "Environment :: Web Environment",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -31,7 +31,7 @@ setup(
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 3",
         "Environment :: Web Environment",
-        "Topic :: Internet :: WWW/HTTP"
+        "Topic :: Internet :: WWW/HTTP",
         # "Topic :: Internet :: WWW/HTTP :: Session",
         "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Message Boards",
     ]
