@@ -32,7 +32,6 @@ setup(
         "Programming Language :: Python :: 3",
         "Environment :: Web Environment",
         "Topic :: Internet :: WWW/HTTP",
-        # "Topic :: Internet :: WWW/HTTP :: Session",
         "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Message Boards",
     ]
 )

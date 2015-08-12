@@ -11,8 +11,8 @@ from views import api
 
 # App
 app = Flask(__name__)
-app.config.from_pyfile('settings/common.py', silent=False)
-app.config.from_pyfile('settings/local_settings.py', silent=False)
+app.config.from_pyfile('../settings/common.py', silent=False)
+app.config.from_pyfile('../settings/local_settings.py', silent=False)
 CORS(app, resources={r"*": {"origins": "*"}})
 
 # DB

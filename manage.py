@@ -3,7 +3,7 @@
 
 from flask.ext.script import Server, Manager, Shell
 
-from app import app, db
+from tagarela.app import app, db
 
 
 manager = Manager(app)
