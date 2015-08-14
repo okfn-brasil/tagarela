@@ -4,8 +4,9 @@
 from datetime import datetime
 
 from sqlalchemy.orm.exc import NoResultFound
-
 from flask.ext.restplus import Resource, Api, apidoc
+
+from viralata.utils import decode_token
 
 from models import Comment, Thread, Author
 from extensions import db, sv
@@ -25,11 +26,7 @@ class AddComment(Resource):
 
     def post(self, thread_name):
         args = self.parser.parse_args()
-        try:
-            decoded = sv.decode(args['token'])
-        except:
-            # TODO: tratar erros...
-            raise
+        decoded = decode_token(args['token'], sv, api)
         author_name = decoded['username']
 
         # TODO: validar text (XSS)
