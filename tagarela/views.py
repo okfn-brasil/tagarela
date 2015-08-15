@@ -25,6 +25,7 @@ class AddComment(Resource):
     parser.add_argument('text', location='json')
 
     def post(self, thread_name):
+        '''Add a comment to thread.'''
         args = self.parser.parse_args()
         decoded = decode_token(args['token'], sv, api)
         author_name = decoded['username']
@@ -64,6 +65,7 @@ class AddComment(Resource):
 class DeleteComment(Resource):
 
     def delete(self, thread_name, comment):
+        '''Delete a comment from a thread.'''
         pass
 
 
@@ -71,6 +73,7 @@ class DeleteComment(Resource):
 class EditComment(Resource):
 
     def put(self, thread_name, comment):
+        '''Edit a comment in a thread.'''
         pass
 
 
@@ -78,6 +81,7 @@ class EditComment(Resource):
 class GetThread(Resource):
 
     def get(self, thread_name):
+        '''Get comments from a thread.'''
         return get_thread_comments(thread_name)
 
 
