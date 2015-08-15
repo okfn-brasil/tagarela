@@ -10,7 +10,7 @@ An example of web interface using this microservice as backend is [Cuidando2](ht
 ## Install
 
 ```
-$ python setup.py install
+$ python setup.py develop
 ```
 
 If you are using Postgres:
