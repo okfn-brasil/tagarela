@@ -13,8 +13,9 @@ from extensions import db, sv
 
 
 api = Api(version='1.0',
-          title='comments',
-          description='Comments')
+          title='Tagarela!',
+          description='A commenting microservice. All non-get operations '
+          'require a micro token.')
 
 
 @api.route('/thread/<string:thread_name>/add')
