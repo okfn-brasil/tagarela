@@ -61,12 +61,33 @@ class AddComment(Resource):
         return get_thread_comments(thread_name)
 
 
-@api.route('/thread/<string:thread_name>/<int:comment>/delete')
+@api.route('/thread/<string:thread_name>/<int:comment_id>/delete')
 class DeleteComment(Resource):
 
-    def delete(self, thread_name, comment):
-        '''Delete a comment from a thread.'''
-        pass
+    parser = api.parser()
+    parser.add_argument('token', location='json')
+
+    def delete(self, thread_name, comment_id):
+        '''Delete a comment from a thread. Returns thread.'''
+        args = self.parser.parse_args()
+        decoded = decode_token(args['token'], sv, api)
+        author_name = decoded['username']
+
+        comment = db.session.query(Comment).filter_by(id=comment_id).one()
+        print(comment)
+        try:
+            comment = db.session.query(Comment).filter_by(id=comment_id).one()
+        except NoResultFound:
+            api.abort(404, 'Comment not found')
+
+        if comment.author.name != author_name:
+            api.abort(400, 'You seem not to be the author of this comment...')
+
+        db.session.delete(comment)
+        db.session.commit()
+
+        return get_thread_comments(thread_name)
+
 
 
 @api.route('/thread/<string:thread_name>/<int:comment>/edit')
