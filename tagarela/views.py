@@ -31,7 +31,6 @@ class AddComment(Resource):
         decoded = decode_token(args['token'], sv, api)
         author_name = decoded['username']
 
-        # TODO: validar text (XSS)
         text = args['text']
 
         # Get thread (add if needed)
@@ -91,16 +90,16 @@ def get_thread_comments(thread_name):
         thread = (db.session.query(Thread)
                     .filter(Thread.name == thread_name).one())
     except NoResultFound:
-        return {"comments": []}
+        return {'comments': []}
         # api.abort(404)
     return {
-        "comments": [
+        'comments': [
             {
-                "id": c.id,
-                "text": c.text,
-                "author": c.author.name,
-                "created": str(c.created),
-                "modified": str(c.modified),
+                'id': c.id,
+                'text': c.text,
+                'author': c.author.name,
+                'created': str(c.created),
+                'modified': str(c.modified),
             }
             for c in thread.comments
         ]
