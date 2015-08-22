@@ -3,7 +3,6 @@
 
 from datetime import datetime
 
-from flask import url_for
 from sqlalchemy.orm.exc import NoResultFound
 from flask.ext.restplus import Resource, Api, apidoc
 from flask.ext.mail import Message
@@ -23,6 +22,7 @@ api = Api(version='1.0',
 parser = api.parser()
 parser.add_argument('token', location='json', help='TOKEN!!')
 parser.add_argument('text', location='json')
+parser.add_argument('vote', location='json', type=bool)
 
 
 @api.route('/thread/<string:thread_name>/add')
@@ -47,15 +47,7 @@ class AddComment(Resource):
             db.session.commit()
             thread_id = thread.id
 
-        # Get author (add if needed)
-        try:
-            author_id = (db.session.query(Author.id)
-                         .filter(Author.name == author_name).one())
-        except NoResultFound:
-            author = Author(name=author_name)
-            db.session.add(author)
-            db.session.commit()
-            author_id = author.id
+        author_id = get_author_add_if_needed(author_name)
 
         now = datetime.now()
         comment = Comment(author_id=author_id, text=text, thread_id=thread_id,
@@ -88,6 +80,24 @@ class EditComment(Resource):
         comment = check_comment_author(comment_id, decoded['username'])
         comment.text = args['text']
         db.session.commit()
+        return get_thread_comments(thread_name)
+
+
+@api.route('/thread/<string:thread_name>/<int:comment_id>/vote')
+class VoteComment(Resource):
+
+    def post(self, thread_name, comment_id):
+        '''Like/dislike a comment in a thread.
+        If vote is False, dislike; else like.'''
+        args = parser.parse_args()
+        vote = args['vote']
+        decoded = decode_token(args['token'], sv, api)
+        author_name = decoded['username']
+        author_id = get_author_add_if_needed(author_name)
+        comment = get_comment(comment_id)
+        if comment.author_id == author_id:
+            api.abort(400, 'You cannot vote for your comments...')
+        comment.set_vote(author_id, vote)
         return get_thread_comments(thread_name)
 
 
@@ -163,6 +173,8 @@ def get_thread_comments(thread_name):
                 'author': c.author.name,
                 'created': str(c.created),
                 'modified': str(c.modified),
+                'likes': c.likes,
+                'dislikes': c.dislikes,
             }
             for c in thread.comments
         ]
@@ -174,6 +186,19 @@ def get_comment(comment_id):
         return db.session.query(Comment).filter_by(id=comment_id).one()
     except NoResultFound:
         api.abort(404, 'Comment not found')
+
+
+def get_author_add_if_needed(author_name):
+    '''Get author id, adding if needed.'''
+    try:
+        author_id = (db.session.query(Author.id)
+                     .filter(Author.name == author_name).one())
+    except NoResultFound:
+        author = Author(name=author_name)
+        db.session.add(author)
+        db.session.commit()
+        author_id = author.id
+    return author_id
 
 
 def check_comment_author(comment_id, author_name):
