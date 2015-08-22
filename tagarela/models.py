@@ -24,7 +24,7 @@ class Thread(db.Model):
     __tablename__ = 'thread'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False, unique=True)
-    comments = db.relationship("Comment")
+    comments = db.relationship("Comment", backref="thread")
 
 
 class Author(db.Model):

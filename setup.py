@@ -16,7 +16,9 @@ setup(
         'Flask-Script',
         'Flask-Restplus',
         'Flask-CORS',
+        'Flask-Mail',
         'Flask-SQLAlchemy',
+        'itsdangerous',
         'viratoken',
         'viralata',
         # psycopg2, # for Postgres support

@@ -3,8 +3,11 @@
 
 from datetime import datetime
 
+from flask import url_for
 from sqlalchemy.orm.exc import NoResultFound
 from flask.ext.restplus import Resource, Api, apidoc
+from flask.ext.mail import Message
+from itsdangerous import BadSignature, SignatureExpired
 
 from viralata.utils import decode_token
 
@@ -18,7 +21,7 @@ api = Api(version='1.0',
           'require a micro token.')
 
 parser = api.parser()
-parser.add_argument('token', location='json', help='The task details')
+parser.add_argument('token', location='json', help='TOKEN!!')
 parser.add_argument('text', location='json')
 
 
@@ -88,6 +91,55 @@ class EditComment(Resource):
         return get_thread_comments(thread_name)
 
 
+@api.route('/thread/<string:thread_name>/<int:comment_id>/report')
+class ReportComment(Resource):
+
+    def post(self, thread_name, comment_id):
+        '''Report comment for possible delete.
+        An e-mail will be sent to admins with a link to delete the comment.'''
+        comment = get_comment(comment_id)
+        token = api.urltoken.dumps((comment.id, comment.thread.name))
+        suburl = api.url_for(DeleteReportedComment, token=token)
+        delete_link = api.app.config['HOSTED_ADDRESS'] + suburl
+        msg = Message(
+                'Request to delete comment: %s' % comment.id,
+                sender=api.app.config['SENDER_NAME'],
+                recipients=api.app.config['ADMIN_EMAILS'])
+        msg.body = api.app.config['EMAIL_TEMPLATE'].format(
+            delete_link=delete_link,
+            id=comment.id,
+            author=comment.author.name,
+            thread=comment.thread.name,
+            created=comment.created,
+            modified=comment.modified,
+            text=comment.text,
+        )
+        api.mail.send(msg)
+        return {'message': 'Reported!'}
+
+
+@api.route('/delete_reported/<string:token>')
+class DeleteReportedComment(Resource):
+
+    def get(self, token):
+        '''Delete a reported comment from a thread using a special token.'''
+        try:
+            comment_id, thread_name = api.urltoken.loads(
+                token,
+                max_age=api.app.config['MAX_AGE_REPORT_TOKENS']
+            )
+        except BadSignature:
+            api.abort(400, 'Bad Signature')
+        except SignatureExpired:
+            api.abort(400, 'Signature Expired')
+        comment = get_comment(comment_id)
+        if comment.thread.name != thread_name:
+            api.abort(400, 'Thread name mismatch')
+        db.session.delete(comment)
+        db.session.commit()
+        return {'message': 'Deleted!'}
+
+
 @api.route('/thread/<string:thread_name>')
 class GetThread(Resource):
 
@@ -117,13 +169,17 @@ def get_thread_comments(thread_name):
     }
 
 
+def get_comment(comment_id):
+    try:
+        return db.session.query(Comment).filter_by(id=comment_id).one()
+    except NoResultFound:
+        api.abort(404, 'Comment not found')
+
+
 def check_comment_author(comment_id, author_name):
     '''Checks if comment_id exists and author_name is its author.
     Returns the comment.'''
-    try:
-        comment = db.session.query(Comment).filter_by(id=comment_id).one()
-    except NoResultFound:
-        api.abort(404, 'Comment not found')
+    comment = get_comment(comment_id)
 
     if comment.author.name != author_name:
         api.abort(400, 'You seem not to be the author of this comment...')
