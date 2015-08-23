@@ -3,8 +3,9 @@
 
 from datetime import datetime
 
+import bleach
 from sqlalchemy.orm.exc import NoResultFound
-from flask.ext.restplus import Resource, Api, apidoc
+from flask.ext.restplus import Resource, Api
 from flask.ext.mail import Message
 from itsdangerous import BadSignature, SignatureExpired
 
@@ -35,7 +36,7 @@ class AddComment(Resource):
         decoded = decode_token(args['token'], sv, api)
         author_name = decoded['username']
 
-        text = args['text']
+        text = bleach.clean(args['text'], strip=True)
 
         # Get thread (add if needed)
         try:
@@ -112,9 +113,9 @@ class ReportComment(Resource):
         suburl = api.url_for(DeleteReportedComment, token=token)
         delete_link = api.app.config['HOSTED_ADDRESS'] + suburl
         msg = Message(
-                'Request to delete comment: %s' % comment.id,
-                sender=api.app.config['SENDER_NAME'],
-                recipients=api.app.config['ADMIN_EMAILS'])
+            'Request to delete comment: %s' % comment.id,
+            sender=api.app.config['SENDER_NAME'],
+            recipients=api.app.config['ADMIN_EMAILS'])
         msg.body = api.app.config['EMAIL_TEMPLATE'].format(
             delete_link=delete_link,
             id=comment.id,

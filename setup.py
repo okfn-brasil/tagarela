@@ -21,6 +21,7 @@ setup(
         'itsdangerous',
         'viratoken',
         'viralata',
+        'bleach'
         # psycopg2, # for Postgres support
     ],
     keywords=['comments', 'microservice'],
