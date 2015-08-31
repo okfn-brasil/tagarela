@@ -29,9 +29,8 @@ class Comment(db.Model):
                           nullable=False)
     likes = db.Column(db.Integer, default=0)
     dislikes = db.Column(db.Integer, default=0)
-
-    # TODO: adicionar mais? likes e dislikes (precisa de voters),
-    # parent_comment (para permitir respostas a comentários, não thread)
+    parent_comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'),
+                                  nullable=True)
 
     def set_vote(self, author_id, like):
         vote = db.session.query(Vote).filter_by(
