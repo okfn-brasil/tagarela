@@ -54,6 +54,10 @@ class ThreadAPI(Resource):
 
     def get(self, thread_name):
         '''Get comments from a thread.'''
+        print("____________________________________________________")
+        # thread = (db.session.query(Thread).filter(Thread.name == thread_name).one())
+        print("........................")
+        # return {}
         return get_thread_comments(thread_name=thread_name)
 
     @api.doc(parser=create_parser('token', 'text'))
@@ -189,6 +193,7 @@ class DeleteReportedAPI(Resource):
 
 
 def comment_to_dict(c):
+    '''Return a comment as a dict (recursively including children).'''
     return {
         'id': c.id,
         'text': c.text,
@@ -212,17 +217,17 @@ def get_thread_comments(thread=None, thread_name=None):
     May receive a thread object or the name of a thread.'''
     if thread_name:
         try:
-                thread = (db.session.query(Thread)
-                          .filter(Thread.name == thread_name).one())
+            thread = (db.session.query(Thread)
+                      .filter(Thread.name == thread_name)
+                      .options(db.joinedload('comments.author'),
+                               db.joinedload('comments.children'))
+                      .one())
         except NoResultFound:
             return {'comments': []}
             # api.abort(404)
-    # comments = OrderedDict([(c.id, c) for c in thread.comments])
-    # TODO: ver se essa recursão não está gerando mais requisições ao BD
     return {
         'comments': [
             comment_to_dict(c)
-            # for c in comments.values() if c.parent_id is None
             for c in thread.comments if c.parent_id is None
         ]
     }
