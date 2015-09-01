@@ -2,6 +2,7 @@
 # coding: utf-8
 
 from datetime import datetime
+# from collections import OrderedDict
 
 import bleach
 from sqlalchemy.orm.exc import NoResultFound
@@ -65,7 +66,7 @@ class ThreadAPI(Resource):
         # Get thread (add if needed)
         try:
             thread = (db.session.query(Thread)
-                         .filter(Thread.name == thread_name).one())
+                      .filter(Thread.name == thread_name).one())
         except NoResultFound:
             thread = Thread(name=thread_name)
             db.session.add(thread)
@@ -91,14 +92,14 @@ class CommentAPI(Resource):
 
         text = bleach.clean(args['text'], strip=True)
 
-        parent_comment = get_comment(comment_id)
+        parent = get_comment(comment_id)
         author_id = get_author_add_if_needed(author_name)
 
         now = datetime.now()
         comment = Comment(author_id=author_id, text=text,
-                          thread_id=parent_comment.thread_id,
+                          thread_id=parent.thread_id,
                           created=now, modified=now,
-                          parent_comment_id=parent_comment.id)
+                          parent_id=parent.id)
         db.session.add(comment)
         db.session.commit()
         return get_thread_comments(comment.thread)
@@ -109,8 +110,7 @@ class CommentAPI(Resource):
         args, author_name = parse_and_decode()
         comment = check_comment_author(comment_id, author_name)
         thread = comment.thread
-        db.session.delete(comment)
-        db.session.commit()
+        delete_comment(comment)
         return get_thread_comments(thread)
 
     @api.doc(parser=create_parser('token', 'text'))
@@ -184,9 +184,27 @@ class DeleteReportedAPI(Resource):
         comment = get_comment(comment_id)
         if comment.thread.name != thread_name:
             api.abort(400, 'Thread name mismatch')
-        db.session.delete(comment)
-        db.session.commit()
+        delete_comment(comment)
         return {'message': 'Deleted!'}
+
+
+def comment_to_dict(c):
+    return {
+        'id': c.id,
+        'text': c.text,
+        'author': c.author.name,
+        'created': str(c.created),
+        'modified': str(c.modified),
+        'upvotes': c.likes,
+        'downvotes': c.dislikes,
+        'url': api.url_for(CommentAPI, comment_id=c.id),
+        'vote_url': api.url_for(VoteAPI, comment_id=c.id),
+        'report_url': api.url_for(ReportAPI, comment_id=c.id),
+        'replies': [] if c.children is None else [
+            comment_to_dict(child)
+            for child in c.children
+        ]
+    }
 
 
 def get_thread_comments(thread=None, thread_name=None):
@@ -195,25 +213,17 @@ def get_thread_comments(thread=None, thread_name=None):
     if thread_name:
         try:
                 thread = (db.session.query(Thread)
-                            .filter(Thread.name == thread_name).one())
+                          .filter(Thread.name == thread_name).one())
         except NoResultFound:
             return {'comments': []}
             # api.abort(404)
+    # comments = OrderedDict([(c.id, c) for c in thread.comments])
+    # TODO: ver se essa recursão não está gerando mais requisições ao BD
     return {
         'comments': [
-            {
-                'id': c.id,
-                'text': c.text,
-                'author': c.author.name,
-                'created': str(c.created),
-                'modified': str(c.modified),
-                'likes': c.likes,
-                'dislikes': c.dislikes,
-                'url': api.url_for(CommentAPI, comment_id=c.id),
-                'vote_url': api.url_for(VoteAPI, comment_id=c.id),
-                'report_url': api.url_for(ReportAPI, comment_id=c.id),
-            }
-            for c in thread.comments
+            comment_to_dict(c)
+            # for c in comments.values() if c.parent_id is None
+            for c in thread.comments if c.parent_id is None
         ]
     }
 
@@ -254,3 +264,9 @@ def parse_and_decode():
     '''Return args and user name'''
     args = general_parser.parse_args()
     return args, decode_token(args['token'], sv, api)['username']
+
+
+def delete_comment(comment):
+    # TODO: tratar quando tem "filhos"
+    db.session.delete(comment)
+    db.session.commit()
