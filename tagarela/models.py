@@ -29,8 +29,11 @@ class Comment(db.Model):
                           nullable=False)
     likes = db.Column(db.Integer, default=0)
     dislikes = db.Column(db.Integer, default=0)
-    parent_comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'),
-                                  nullable=True)
+    parent_id = db.Column(db.Integer, db.ForeignKey('comment.id'),
+                          nullable=True)
+    children = db.relationship('Comment',
+                               backref=db.backref('parent',
+                                                  remote_side=[id]))
 
     def set_vote(self, author_id, like):
         vote = db.session.query(Vote).filter_by(
