@@ -54,10 +54,6 @@ class ThreadAPI(Resource):
 
     def get(self, thread_name):
         '''Get comments from a thread.'''
-        print("____________________________________________________")
-        # thread = (db.session.query(Thread).filter(Thread.name == thread_name).one())
-        print("........................")
-        # return {}
         return get_thread_comments(thread_name=thread_name)
 
     @api.doc(parser=create_parser('token', 'text'))
@@ -266,7 +262,7 @@ def check_comment_author(comment_id, author_name):
 
 
 def parse_and_decode():
-    '''Return args and user name'''
+    '''Return args and username'''
     args = general_parser.parse_args()
     return args, decode_token(args['token'], sv, api)['username']
 
