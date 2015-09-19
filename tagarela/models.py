@@ -13,7 +13,10 @@ class Vote(db.Model):
                           primary_key=True)
     like = db.Column(db.Boolean(), nullable=False)
     author = db.relationship("Author", backref="votes")
-    comment = db.relationship("Comment", backref="votes")
+    comment = db.relationship("Comment",
+                              backref=db.backref("votes",
+                                                 single_parent=True,
+                                                 cascade="all, delete-orphan"))
 
 
 class Comment(db.Model):
