@@ -198,6 +198,7 @@ def comment_to_dict(c):
         'modified': str(c.modified),
         'upvotes': c.likes,
         'downvotes': c.dislikes,
+        'hidden': c.hidden,
         'url': api.url_for(CommentAPI, comment_id=c.id),
         'vote_url': api.url_for(VoteAPI, comment_id=c.id),
         'report_url': api.url_for(ReportAPI, comment_id=c.id),
@@ -268,6 +269,10 @@ def parse_and_decode():
 
 
 def delete_comment(comment):
-    # TODO: tratar quando tem "filhos"
-    db.session.delete(comment)
+    # If the comment has children, hide instead of deleting.
+    # (you wouldn't delete a comment with children, would you?)
+    if comment.children:
+        comment.hidden = True
+    else:
+        db.session.delete(comment)
     db.session.commit()

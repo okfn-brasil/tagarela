@@ -37,6 +37,7 @@ class Comment(db.Model):
     children = db.relationship('Comment',
                                backref=db.backref('parent',
                                                   remote_side=[id]))
+    hidden = db.Column(db.Boolean(), default=False)
 
     def set_vote(self, author_id, like):
         vote = db.session.query(Vote).filter_by(
