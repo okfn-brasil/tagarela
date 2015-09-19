@@ -226,7 +226,9 @@ def get_thread_comments(thread=None, thread_name=None):
         'comments': [
             comment_to_dict(c)
             for c in thread.comments if c.parent_id is None
-        ]
+        ],
+        'name': thread.name,
+        'count': len(thread.comments)
     }
 
 
