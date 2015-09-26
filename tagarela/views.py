@@ -8,26 +8,23 @@ import arrow
 import bleach
 from sqlalchemy import desc
 from sqlalchemy.orm.exc import NoResultFound
-from flask.ext.restplus import Resource, Api
+from flask.ext.restplus import Resource
 from flask.ext.mail import Message
 from itsdangerous import BadSignature, SignatureExpired
 
 from viralata.utils import decode_token
+from cutils import date_to_json, paginate, ExtraApi
 
 from models import Comment, Thread, Author
 from extensions import db, sv
 
 
-api = Api(version='1.0',
-          title='Tagarela!',
-          description='A commenting microservice. All non-get operations '
-          'require a micro token.')
+api = ExtraApi(version='1.0',
+               title='Tagarela!',
+               description='A commenting microservice. All non-get operations '
+               'require a micro token.')
 
-arguments = {
-    'token': {
-        'location': 'json',
-        'help': 'The authentication token.',
-    },
+api.update_parser_arguments({
     'text': {
         'location': 'json',
         'help': 'The text for the comment.',
@@ -37,28 +34,7 @@ arguments = {
         'type': bool,
         'help': 'Use "true" for a upvote, "false" for a downvote.',
     },
-    'page': {
-        'type': int,
-        'default': 0,
-        'help': 'Page doc!!',
-    },
-    'per_page_num': {
-        'type': int,
-        'default': 20,
-        'help': 'PPN doc!!',
-    },
-}
-
-
-def create_parser(*args):
-    '''Create a parser for the passed arguments.'''
-    parser = api.parser()
-    for arg in args:
-        parser.add_argument(arg, **arguments[arg])
-    return parser
-
-
-general_parser = create_parser(*arguments)
+})
 
 
 @api.route('/thread/<string:thread_name>')
@@ -68,7 +44,7 @@ class ThreadAPI(Resource):
         '''Get comments from a thread.'''
         return get_thread_comments(thread_name=thread_name)
 
-    @api.doc(parser=create_parser('token', 'text'))
+    @api.doc(parser=api.create_parser('token', 'text'))
     def post(self, thread_name):
         '''Add a comment to thread.'''
         args, author_name = parse_and_decode()
@@ -97,10 +73,10 @@ class ThreadAPI(Resource):
 @api.route('/comment')
 class ListCommentsAPI(Resource):
 
-    @api.doc(parser=create_parser('page', 'per_page_num'))
+    @api.doc(parser=api.create_parser('page', 'per_page_num'))
     def get(self):
         '''List comments by decrescent creation time.'''
-        args = general_parser.parse_args()
+        args = api.general_parse()
         page = args['page']
         per_page_num = args['per_page_num']
         comments = (db.session.query(Comment, Thread.name)
@@ -127,7 +103,7 @@ class ListCommentsAPI(Resource):
 @api.route('/comment/<int:comment_id>')
 class CommentAPI(Resource):
 
-    @api.doc(parser=create_parser('token', 'text'))
+    @api.doc(parser=api.create_parser('token', 'text'))
     def post(self, comment_id):
         '''Add a comment reply to this comment.'''
         args, author_name = parse_and_decode()
@@ -146,7 +122,7 @@ class CommentAPI(Resource):
         db.session.commit()
         return get_thread_comments(comment.thread)
 
-    @api.doc(parser=create_parser('token'))
+    @api.doc(parser=api.create_parser('token'))
     def delete(self, comment_id):
         '''Delete a comment from a thread. Returns thread.'''
         args, author_name = parse_and_decode()
@@ -155,7 +131,7 @@ class CommentAPI(Resource):
         delete_comment(comment)
         return get_thread_comments(thread)
 
-    @api.doc(parser=create_parser('token', 'text'))
+    @api.doc(parser=api.create_parser('token', 'text'))
     def put(self, comment_id):
         '''Edit a comment in a thread.'''
         args, author_name = parse_and_decode()
@@ -168,7 +144,7 @@ class CommentAPI(Resource):
 @api.route('/vote/<int:comment_id>')
 class VoteAPI(Resource):
 
-    @api.doc(parser=create_parser('token', 'vote'))
+    @api.doc(parser=api.create_parser('token', 'vote'))
     def post(self, comment_id):
         '''Like/dislike a comment in a thread.
         If vote is False, dislike; else like.'''
@@ -313,7 +289,7 @@ def check_comment_author(comment_id, author_name):
 
 def parse_and_decode():
     '''Return args and username'''
-    args = general_parser.parse_args()
+    args = api.general_parse()
     return args, decode_token(args['token'], sv, api)['username']
 
 
@@ -325,13 +301,3 @@ def delete_comment(comment):
     else:
         db.session.delete(comment)
     db.session.commit()
-
-
-def date_to_json(date):
-    return str(date)
-
-
-def paginate(query, page, per_page_num):
-    '''Paginate a query, returning also the total before pagination.'''
-    total = query.count()
-    return (query.offset(page*per_page_num).limit(per_page_num).all(), total)
