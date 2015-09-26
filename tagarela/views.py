@@ -262,15 +262,20 @@ def get_thread_comments(thread=None, thread_name=None):
                                db.joinedload('comments.children'))
                       .one())
         except NoResultFound:
-            return {'comments': []}
+            comments = []
+            count = 0
             # api.abort(404)
+
+    if thread:
+        comments = [comment_to_dict(c) for c in thread.comments
+                    if c.parent_id is None]
+        thread_name = thread.name
+        count = len(thread.comments)
+
     return {
-        'comments': [
-            comment_to_dict(c)
-            for c in thread.comments if c.parent_id is None
-        ],
-        'name': thread.name,
-        'count': len(thread.comments)
+        'comments': comments,
+        'name': thread_name,
+        'count': count
     }
 
 
