@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from sqlalchemy_utils import ArrowType
+
 from extensions import db
 
 
@@ -23,8 +25,10 @@ class Comment(db.Model):
     __tablename__ = 'comment'
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String(500), nullable=False)
-    created = db.Column(db.DateTime, nullable=False)
-    modified = db.Column(db.DateTime, nullable=False)
+    # created = db.Column(db.DateTime(timezone=True), nullable=False)
+    # modified = db.Column(db.DateTime(timezone=True), nullable=False)
+    created = db.Column(ArrowType, nullable=False)
+    modified = db.Column(ArrowType, nullable=False)
     # http://docs.sqlalchemy.org/en/rel_1_0/orm/basic_relationships.html
     thread_id = db.Column(db.Integer, db.ForeignKey('thread.id'),
                           nullable=False)

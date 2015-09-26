@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from datetime import datetime
-# from collections import OrderedDict
+# from datetime import datetime
 
+# import pytz
+import arrow
 import bleach
+from sqlalchemy import desc
 from sqlalchemy.orm.exc import NoResultFound
 from flask.ext.restplus import Resource, Api
 from flask.ext.mail import Message
@@ -34,7 +36,17 @@ arguments = {
         'location': 'json',
         'type': bool,
         'help': 'Use "true" for a upvote, "false" for a downvote.',
-    }
+    },
+    'page': {
+        'type': int,
+        'default': 0,
+        'help': 'Page doc!!',
+    },
+    'per_page_num': {
+        'type': int,
+        'default': 20,
+        'help': 'PPN doc!!',
+    },
 }
 
 
@@ -74,12 +86,42 @@ class ThreadAPI(Resource):
 
         author_id = get_author_add_if_needed(author_name)
 
-        now = datetime.now()
+        now = arrow.utcnow()
         comment = Comment(author_id=author_id, text=text, thread_id=thread.id,
                           created=now, modified=now)
         db.session.add(comment)
         db.session.commit()
         return get_thread_comments(thread)
+
+
+@api.route('/comment')
+class ListCommentsAPI(Resource):
+
+    @api.doc(parser=create_parser('page', 'per_page_num'))
+    def get(self):
+        '''List comments by decrescent creation time.'''
+        args = general_parser.parse_args()
+        page = args['page']
+        per_page_num = args['per_page_num']
+        comments = (db.session.query(Comment, Thread.name)
+                    .filter(Comment.thread_id == Thread.id)
+                    .order_by(desc(Comment.created))
+                    .filter_by(hidden=False))
+        # Limit que number of results per page
+        comments, total = paginate(comments, page, per_page_num)
+        return {
+            'comments': [
+                {
+                    'thread_name': thread_name,
+                    'id': c.id,
+                    'text': c.text,
+                    'author': c.author.name,
+                    'created': date_to_json(c.created),
+                    'modified': date_to_json(c.modified),
+                    # 'url': api.url_for(CommentAPI, comment_id=c.id),
+                } for c, thread_name in comments],
+            'total': total,
+        }
 
 
 @api.route('/comment/<int:comment_id>')
@@ -95,7 +137,7 @@ class CommentAPI(Resource):
         parent = get_comment(comment_id)
         author_id = get_author_add_if_needed(author_name)
 
-        now = datetime.now()
+        now = arrow.utcnow()
         comment = Comment(author_id=author_id, text=text,
                           thread_id=parent.thread_id,
                           created=now, modified=now,
@@ -194,8 +236,8 @@ def comment_to_dict(c):
         'id': c.id,
         'text': c.text,
         'author': c.author.name,
-        'created': str(c.created),
-        'modified': str(c.modified),
+        'created': date_to_json(c.created),
+        'modified': date_to_json(c.modified),
         'upvotes': c.likes,
         'downvotes': c.dislikes,
         'hidden': c.hidden,
@@ -278,3 +320,13 @@ def delete_comment(comment):
     else:
         db.session.delete(comment)
     db.session.commit()
+
+
+def date_to_json(date):
+    return str(date)
+
+
+def paginate(query, page, per_page_num):
+    '''Paginate a query, returning also the total before pagination.'''
+    total = query.count()
+    return (query.offset(page*per_page_num).limit(per_page_num).all(), total)

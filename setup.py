@@ -21,7 +21,9 @@ setup(
         'itsdangerous',
         'viratoken',
         'viralata',
-        'bleach'
+        'bleach',
+        'sqlalchemy-utils',
+        'arrow',
         # psycopg2, # for Postgres support
     ],
     keywords=['comments', 'microservice'],
