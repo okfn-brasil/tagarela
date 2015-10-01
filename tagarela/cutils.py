@@ -14,6 +14,7 @@ def paginate(query, page, per_page_num):
 
 
 def date_to_json(date):
+    '''Helper to format dates.'''
     return str(date)
 
 

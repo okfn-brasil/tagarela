@@ -20,5 +20,5 @@ MAIL_USERNAME = __username__
 MAIL_PASSWORD = '{email_password}'
 SENDER_NAME = __username__
 
-# Admins e-mails. They will receive links to delete te reported comments.
+# Admins e-mails. They will receive links to delete the reported comments.
 ADMIN_EMAILS = [__username__]
