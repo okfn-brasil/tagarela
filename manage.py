@@ -9,14 +9,16 @@ from tagarela.app import create_app
 from tagarela.extensions import db
 
 
-app = create_app(
-    os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        'settings'))
-manager = Manager(app)
+manager = Manager(create_app)
+
+manager.add_option(
+    "-s", "--settings", dest="settings_folder", required=False,
+    default=os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), 'settings'))
+
 manager.add_command('run', Server(port=5003))
 manager.add_command('shell', Shell(make_context=lambda: {
-    'app': app,
+    'app': manager.app,
     'db': db,
 }))
 
