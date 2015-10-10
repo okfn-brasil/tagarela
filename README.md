@@ -1,4 +1,4 @@
-# Tagarela (EXPERIMETAL!!!)
+# Tagarela (Beta)
 
 Microservice for comments.
 
@@ -41,7 +41,7 @@ $ python manage.py run
 
 ## API
 
-Needs doc...
+Needs a 'static' doc, but accesssing the root of a hosted instance it's possible to see a Swagger doc.
 
 ## Name
 
