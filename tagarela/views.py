@@ -299,6 +299,12 @@ def delete_comment(comment):
     # (you wouldn't delete a comment with children, would you?)
     if comment.children:
         comment.hidden = True
+        comment.modified = arrow.utcnow()
     else:
         db.session.delete(comment)
+        # Remove hidden ancestors (this avoids leaving chidrenless comments
+        # hidden)
+        parent = comment.parent
+        if parent and parent.hidden:
+            delete_comment(parent)
     db.session.commit()
