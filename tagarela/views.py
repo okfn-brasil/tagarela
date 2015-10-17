@@ -137,6 +137,7 @@ class CommentAPI(Resource):
         args, author_name = parse_and_decode()
         comment = check_comment_author(comment_id, author_name)
         comment.text = args['text']
+        comment.modified = arrow.utcnow()
         db.session.commit()
         return get_thread_comments(comment.thread)
 
