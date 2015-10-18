@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# from datetime import datetime
+from __future__ import unicode_literals  # unicode by default
 
 # import pytz
 import arrow

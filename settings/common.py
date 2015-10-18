@@ -1,3 +1,5 @@
+from __future__ import unicode_literals  # unicode by default
+
 DEBUG = True
 
 # Max age for tokens used to delete reported comments
