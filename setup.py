@@ -41,7 +41,7 @@ setup(
         'flask-restplus==0.7.2',
         'Flask-Script==2.0.5',
         'Flask-SQLAlchemy==2.0',
-        'functools32==3.2.3.post2',
+        'functools32==3.2.3-2',
         'html5lib==1.0b8',
         'idna==2.0',
         'ipaddress==1.0.14',
